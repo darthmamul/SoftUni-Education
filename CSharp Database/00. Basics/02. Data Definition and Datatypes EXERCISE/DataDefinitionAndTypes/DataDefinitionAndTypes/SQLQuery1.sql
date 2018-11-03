@@ -1,0 +1,22 @@
+CREATE DATABASE Minions
+
+CREATE TABLE Minions (
+	Id INT PRIMARY KEY IDENTITY,
+	[Name] NVARCHAR(50) NOT NULL,
+	Age INT NOT NULL
+)
+
+CREATE TABLE Towns (
+	Id INT PRIMARY KEY IDENTITY,
+	[Name] NVARCHAR (50) NOT NULL
+)
+
+ALTER TABLE Minions
+	ADD TownId INT NOT NULL FOREIGN KEY REFERENCES Towns(Id)
+
+INSERT INTO Minions
+		(Id, Name, Age, TownId)
+Values 
+		(1, 'Kevin', 22, 1)
+
+SELECT * FROM Minions

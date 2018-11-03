@@ -1,0 +1,43 @@
+using System;
+using System.IO;
+using System.Linq;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                //Address address = new Address()
+                //{
+                //    AddressText = "Vitoshka 15",
+                //    TownId = 4
+                //};
+
+                //var employeeName = context.Employees
+                //    .FirstOrDefault(x => x.LastName == "Nakov");
+                //employeeName.Address = address;
+
+                //context.SaveChanges();
+
+                var adressess = context.Employees
+                    .OrderByDescending(x => x.AddressId)
+                    .Select(x => x.Address.AddressText)
+                    .Take(10)
+                    .ToArray();
+
+                using (StreamWriter sw = new StreamWriter("../Task06.txt"))
+                {
+                    foreach (var a in adressess)
+                    {
+                        sw.WriteLine(a);
+                    }
+                }
+            }
+        }
+    }
+}

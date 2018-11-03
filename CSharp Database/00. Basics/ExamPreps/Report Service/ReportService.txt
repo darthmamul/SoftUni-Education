@@ -1,0 +1,536 @@
+CREATE DATABASE ReportService;
+
+--01.CREATE TABLES--
+CREATE TABLE Users
+(Id        INT
+ PRIMARY KEY IDENTITY,
+ Username  NVARCHAR(30)
+ UNIQUE NOT NULL,
+ [Password]  NVARCHAR(50) NOT NULL,
+ [Name]      NVARCHAR(50),
+ Gender    CHAR(1) CHECK(Gender IN ('M', 'F')),
+ BirthDate DATETIME,
+ Age       INT,
+ Email     NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Departments
+(Id   INT
+ PRIMARY KEY IDENTITY,
+ [Name] NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Employees
+(Id           INT
+ PRIMARY KEY IDENTITY,
+ FirstName    NVARCHAR(25),
+ LastName     NVARCHAR(25),
+ Gender       CHAR(1) CHECK(Gender IN('M', 'F')),
+ BirthDate    DATETIME,
+ Age          INT,
+ DepartmentId INT FOREIGN KEY REFERENCES Departments(Id) NOT NULL
+);
+
+CREATE TABLE Categories
+(Id           INT
+ PRIMARY KEY IDENTITY,
+ [Name]         NVARCHAR(50) NOT NULL,
+ DepartmentId INT FOREIGN KEY REFERENCES Departments(Id) NOT NULL
+);
+
+CREATE TABLE Status
+(Id    INT
+ PRIMARY KEY IDENTITY,
+ Label VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE Reports
+(Id          INT
+ PRIMARY KEY IDENTITY,
+ CategoryId  INT FOREIGN KEY REFERENCES Categories(Id) NOT NULL,
+ StatusId    INT FOREIGN KEY REFERENCES Status(Id) NOT NULL,
+ OpenDate    DATETIME NOT NULL,
+ CloseDate   DATETIME,
+ [Description]  VARCHAR(200),
+ UserId      INT FOREIGN KEY REFERENCES Users(Id) NOT NULL,
+ EmployeeId  INT FOREIGN KEY REFERENCES Employees(Id)
+);
+
+--02.INSERT--
+SELECT *
+FROM Departments;
+
+INSERT INTO Employees
+(FirstName,
+ LastName,
+ Gender,
+ BirthDate,
+ DepartmentID
+)
+VALUES
+('Marlo',
+ 'O’Malley',
+ 'M',
+ '9/21/1958',
+ 1
+),
+('Niki',
+ 'Stanaghan',
+ 'F',
+ '11/26/1969',
+ 4
+),
+('Ayrton',
+ 'Senna',
+ 'M',
+ '03/21/1960',
+ 9
+),
+('Ronnie',
+ 'Peterson',
+ 'M',
+ '02/14/1944',
+ 9
+),
+('Giovanna',
+ 'Amati',
+ 'F',
+ '07/20/1959',
+ 5
+);
+
+INSERT INTO Reports
+(CategoryId,
+ StatusId,
+ OpenDate,
+ CloseDate,
+ Description,
+ UserId,
+ EmployeeId
+)
+VALUES
+(1,
+ 1,
+ '04/13/2017',
+ NULL,
+ 'Stuck Road on Str.133',
+ 6,
+ 2
+),
+(6,
+ 3,
+ '09/05/2015',
+ '12/06/2015',
+ 'Charity trail running',
+ 3,
+ 5
+),
+(14,
+ 2,
+ '09/07/2015',
+ NULL,
+ 'Falling bricks on Str.58',
+ 5,
+ 2
+),
+(4,
+ 3,
+ '07/03/2017',
+ '07/06/2017',
+ 'Cut off streetlight on Str.11',
+ 1,
+ 1
+);
+
+--03.UPDATE--
+UPDATE Reports
+  SET
+      StatusId = 2
+WHERE StatusId = 1
+      AND CategoryId = 4;
+
+--04.DELETE--
+DELETE FROM Reports
+WHERE StatusId = 4;
+
+--05.USERSbyAGE--
+SELECT Username,
+       Age
+FROM Users
+ORDER BY Age,
+         Username DESC;
+
+--06.UnassignedReports--
+SELECT Description,
+       OpenDate
+FROM Reports
+WHERE EmployeeId IS NULL
+ORDER BY OpenDate,
+         Description;
+
+--07.Employees & Reports--
+SELECT e.FirstName,
+       e.LastName,
+       r.Description,
+       FORMAT(r.OpenDate, 'yyyy-MM-dd') AS [OpenDate]
+FROM Reports AS r
+     JOIN Employees AS e ON e.Id = r.EmployeeId
+WHERE EmployeeId IS NOT NULL
+ORDER BY e.Id,
+         r.OpenDate,
+         r.Id;
+
+--08.Most Reported Category--
+SELECT c.Name AS [CategoryName],
+       COUNT(r.Id) AS [ReportsNumber]
+FROM Categories AS c
+     JOIN Reports AS r ON r.CategoryId = c.Id
+GROUP BY c.Id, c.Name
+ORDER BY COUNT(r.Id) DESC,
+         c.Name;
+
+--09.Employees in Category --
+SELECT c.Name AS [CategoryName],
+       COUNT(e.Id) AS [Employees Number]
+FROM Categories AS c
+     JOIN Departments AS d ON d.Id = c.DepartmentId
+     JOIN Employees AS e ON e.DepartmentId = d.Id
+GROUP BY c.Name
+ORDER BY c.Name;
+
+--10.Users per Employee--
+SELECT DISTINCT
+       e.FirstName+' '+e.LastName AS [Name],
+       COUNT(r.UserId) AS [Users Number]
+FROM Reports AS r
+     RIGHT JOIN Employees AS e ON e.Id = r.EmployeeId
+GROUP BY e.FirstName+' '+e.LastName
+ORDER BY [Users Number] DESC,
+         [Name];
+
+--11.Emergency Patrol --
+SELECT r.OpenDate AS [OpenDate],
+       r.Description AS [Description],
+       u.Email AS [Reporter Email]
+FROM Reports AS r
+     JOIN Categories AS c ON c.Id = r.CategoryId
+     JOIN Users AS u ON u.Id = r.UserId
+WHERE r.CloseDate IS NULL
+      AND LEN(r.Description) > 20
+      AND Description LIKE '%str%'
+      AND c.DepartmentId IN(1, 4, 5)
+ORDER BY [OpenDate],
+         [Reporter Email],
+         u.Id;
+
+--12.Birthday Report--
+SELECT DISTINCT
+       c.Name AS [Category Name]
+FROM Reports AS r
+     JOIN Categories AS c ON c.Id = r.CategoryId
+     JOIN Users AS u ON u.Id = r.UserId
+WHERE DAY(r.OpenDate) = DAY(u.BirthDate)
+      AND MONTH(r.OpenDate) = MONTH(u.BirthDate)
+ORDER BY [Category Name];
+
+--13.Numbers Coincidence--
+SELECT DISTINCT
+       u.Username AS [Username]
+FROM Reports AS r
+     JOIN Categories AS c ON c.Id = r.CategoryId
+     JOIN Users AS u ON u.Id = r.UserId
+WHERE LEFT(u.Username, 1) LIKE '[0-9]'
+      AND CONVERT(VARCHAR(10), c.Id) = LEFT(u.UserName, 1)
+      OR RIGHT(u.Username, 1) LIKE '[0-9]'
+      AND CONVERT(VARCHAR(10), c.Id) = RIGHT(u.UserName, 1)
+ORDER BY [Username];
+
+--14.Open/Closed Statistics--
+SELECT concat(e.FirstName, ' ', e.LastName) AS [Name],
+       CAST(COUNT(CASE
+                      WHEN YEAR(r.OpenDate) < 2016
+                           AND YEAR(r.CloseDate) = 2016
+                      THEN 1
+                      WHEN YEAR(r.OpenDate) = 2016
+                           AND YEAR(r.CloseDate) = 2016
+                      THEN 2
+                  END) AS VARCHAR(MAX))+'/'+CAST(COUNT(CASE
+                                                           WHEN YEAR(r.OpenDate) = 2016
+                                                                AND YEAR(r.CloseDate) IS NULL
+                                                           THEN 1
+                                                           ELSE 0
+                                                       END) - COUNT(CASE
+                                                                        WHEN YEAR(r.OpenDate) < 2016
+                                                                             AND YEAR(r.CloseDate) = 2016
+                                                                        THEN 1
+                                                                    END) AS VARCHAR(MAX))
+FROM Reports AS r
+     JOIN Employees AS e ON e.Id = r.EmployeeId
+WHERE YEAR(r.OpenDate) = 2016
+      OR YEAR(r.CloseDate) = 2016
+GROUP BY concat(e.FirstName, ' ', e.LastName),
+         e.Id
+HAVING COUNT(CASE
+                 WHEN YEAR(r.OpenDate) = 2016
+                      AND r.CloseDate IS NULL
+                 THEN 1
+                 ELSE 0
+             END) - COUNT(CASE
+                              WHEN YEAR(r.OpenDate) < 2016
+                                   AND YEAR(r.CloseDate) = 2016
+                              THEN 1
+                          END) > 0
+ORDER BY [Name],
+         e.Id;
+
+--15.Average Closing Time--
+SELECT d.Name AS [Department Name],
+       isnull(CONVERT(VARCHAR(10), AVG(DATEDIFF(day, r.OpenDate, r.CloseDate))), 'no info') AS [Average Duration]
+FROM Departments AS d
+     JOIN Categories AS c ON c.DepartmentId = d.Id
+     JOIN Reports AS r ON r.CategoryId = c.Id
+GROUP BY d.Name
+ORDER BY d.Name;
+
+--16.Favorite Categories--
+SELECT d.Name,
+       c.Name,
+       CAST(ROUND(CAST(COUNT(c.Name) AS DECIMAL(10, 2)) / SUM(COUNT(d.Name)) OVER(PARTITION BY d.Name) * 100, 0) AS INT)
+FROM Departments AS d
+     JOIN Categories AS c ON c.DepartmentId = d.Id
+     JOIN Reports AS r ON r.CategoryId = c.Id
+GROUP BY d.Name,
+         c.Name
+ORDER BY d.Name,
+         c.Name;
+
+GO
+
+--second solution--
+SELECT d.Name AS [Department Name],
+       c.Name AS [Category Name],
+       CONVERT(INT, ROUND(CountPerCategory.Count * 100.0 / CountPerDepartment.Count, 0)) AS Percentage
+FROM Departments AS d
+     JOIN Categories AS c ON c.DepartmentId = d.Id
+     JOIN
+(
+    SELECT CategoryId,
+           COUNT(1) AS Count
+    FROM Reports
+    GROUP BY CategoryId
+) CountPerCategory ON CountPerCategory.CategoryId = c.Id
+     JOIN
+(
+    SELECT c.DepartmentId,
+           COUNT(1) AS Count
+    FROM Reports AS r
+         JOIN Categories AS c ON c.Id = r.CategoryId
+    GROUP BY c.DepartmentId
+) CountPerDepartment ON CountPerDepartment.DepartmentId = c.DepartmentId
+ORDER BY d.Name,
+         c.Name,
+         Percentage;
+
+  GO
+
+--17.Employee's Load--
+CREATE FUNCTION udf_GetReportsCount
+(@employeeId INT,
+ @statusId   INT
+)
+RETURNS INT
+AS
+     BEGIN
+         DECLARE @ReportsCount INT;
+         SET @ReportsCount =
+(
+    SELECT COUNT(StatusId)
+    FROM Reports
+    WHERE EmployeeId = @employeeId
+          AND StatusId = @statusId
+);
+         RETURN @ReportsCount;
+     END;
+
+--SELECT Id,
+--       FirstName,
+--       LastName,
+--       dbo.udf_GetReportsCount(Id, 2) AS ReportsCount
+--FROM Employees
+--ORDER BY Id;
+
+GO
+
+--18.Assign Employee--
+CREATE PROCEDURE usp_AssignEmployeeToReport
+(@employeeId INT,
+ @reportId   INT
+)
+AS
+     BEGIN
+         DECLARE @EmployeeDepartment INT=
+(
+    SELECT DepartmentId
+    FROM Employees
+    WHERE Id = @employeeId
+);
+         DECLARE @ReportCategoryOfDepartment INT=
+(
+    SELECT c.DepartmentId
+    FROM Reports AS r
+         JOIN Categories AS c ON c.Id = r.CategoryId
+    WHERE r.Id = @reportId
+);
+         IF(@EmployeeDepartment <> @ReportCategoryOfDepartment)
+             BEGIN
+                 RAISERROR('Employee doesn''t belong to the appropriate department!', 16, 1);
+                 RETURN;
+             END;
+         UPDATE Reports
+           SET
+               EmployeeId = @employeeId
+         WHERE Id = @reportId;
+     END;
+         BEGIN TRAN;
+         EXEC usp_AssignEmployeeToReport
+              17,
+              2;
+         SELECT EmployeeId
+         FROM Reports
+         WHERE Id = 2;
+         ROLLBACK;
+
+GO
+
+--19.Close Reports--
+CREATE TRIGGER tr_ChangeStatus ON Reports
+FOR UPDATE
+AS
+     BEGIN
+         DECLARE @CompletedID INT=
+(
+    SELECT Id
+    FROM Status
+    WHERE Label = 'Completed'
+);
+         UPDATE Reports
+           SET
+               StatusId = @CompletedID
+         WHERE Id IN(SELECT r.Id
+                     FROM Reports AS r
+                          JOIN deleted AS d ON d.Id = r.Id
+                          JOIN inserted AS i ON i.Id = r.Id
+                     WHERE d.CloseDate IS NULL
+                           AND i.CloseDate IS NOT NULL);
+     END;
+
+BEGIN TRAN;
+UPDATE Reports
+  SET
+      CloseDate = GETDATE()
+WHERE EmployeeId = 5;
+ROLLBACK;
+
+--20.Categories Revision --
+SELECT c.Name,
+(
+    SELECT COUNT(Id)
+    FROM Reports
+    WHERE StatusId IN(1, 2)
+    AND CategoryId =
+(
+    SELECT Id
+    FROM Categories
+    WHERE Name = c.Name
+)
+),
+       CASE
+           WHEN
+(
+    SELECT COUNT(Id)
+    FROM Reports
+    WHERE StatusId = 1
+          AND CategoryId =
+(
+    SELECT Id
+    FROM Categories
+    WHERE name = c.Name
+)
+) >
+(
+    SELECT COUNT(Id)
+    FROM Reports
+    WHERE StatusId = 2
+          AND CategoryId =
+(
+    SELECT Id
+    FROM Categories
+    WHERE name = c.Name
+)
+)
+           THEN 'waiting'
+           WHEN
+(
+    SELECT COUNT(Id)
+    FROM Reports
+    WHERE StatusId = 1
+          AND CategoryId =
+(
+    SELECT Id
+    FROM Categories
+    WHERE name = c.Name
+)
+) <
+(
+    SELECT COUNT(Id)
+    FROM Reports
+    WHERE StatusId = 2
+          AND CategoryId =
+(
+    SELECT Id
+    FROM Categories
+    WHERE name = c.Name
+)
+)
+           THEN 'in progress'
+           ELSE 'equal'
+       END
+FROM Categories AS c
+     JOIN Reports AS r ON r.CategoryId = c.Id
+     JOIN Status AS s ON s.Id = r.StatusId
+WHERE s.Label IN('waiting', 'in progress')
+GROUP BY c.Name
+ORDER BY c.Name;
+
+--ANOTHER BETTER SOLUTION--
+SELECT c.Name,
+       COUNT(r.Id) AS [Reports Number],
+       CASE
+           WHEN SUM(CASE
+                        WHEN r.StatusId = 2
+                        THEN 1
+                        ELSE 0
+                    END) > SUM(CASE
+                                   WHEN r.StatusId = 1
+                                   THEN 1
+                                   ELSE 0
+                               END)
+           THEN 'in progress'
+           WHEN SUM(CASE
+                        WHEN r.StatusId = 2
+                        THEN 1
+                        ELSE 0
+                    END) < SUM(CASE
+                                   WHEN r.StatusId = 1
+                                   THEN 1
+                                   ELSE 0
+                               END)
+           THEN 'waiting'
+           ELSE 'equal'
+       END AS MainStatus
+FROM Reports AS r
+     JOIN Categories AS c ON c.Id = r.CategoryId
+WHERE r.StatusId IN(1, 2)
+GROUP BY c.Name
+ORDER BY c.Name,
+         [Reports Number];

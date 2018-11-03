@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IteratorsAndComparatorsLab", "IteratorsAndComparatorsLab\IteratorsAndComparatorsLab.csproj", "{05DACA67-C1B2-477E-A4E3-D58A146A5D9D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "01.LibraryProblem", "01.Library\01.LibraryProblem.csproj", "{936E66FC-E4A1-412E-8571-176115C9981E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02.LibraryIteratorProblem", "02.LibraryIteratorProblem\02.LibraryIteratorProblem.csproj", "{072BE83D-0791-464A-AB14-5E999BC04550}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "03.ComparableBookProblem", "03.ComparableBookProblem\03.ComparableBookProblem.csproj", "{175C25B5-A9AA-468D-BEE8-9402DA114FCC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "04.BookComparerProbblem", "04.BookComparerProbblem\04.BookComparerProbblem.csproj", "{4B81E4A9-62E8-4FA9-B7D0-1096683DB349}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05DACA67-C1B2-477E-A4E3-D58A146A5D9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05DACA67-C1B2-477E-A4E3-D58A146A5D9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05DACA67-C1B2-477E-A4E3-D58A146A5D9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05DACA67-C1B2-477E-A4E3-D58A146A5D9D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{936E66FC-E4A1-412E-8571-176115C9981E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{936E66FC-E4A1-412E-8571-176115C9981E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{936E66FC-E4A1-412E-8571-176115C9981E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{936E66FC-E4A1-412E-8571-176115C9981E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{072BE83D-0791-464A-AB14-5E999BC04550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{072BE83D-0791-464A-AB14-5E999BC04550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{072BE83D-0791-464A-AB14-5E999BC04550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{072BE83D-0791-464A-AB14-5E999BC04550}.Release|Any CPU.Build.0 = Release|Any CPU
+		{175C25B5-A9AA-468D-BEE8-9402DA114FCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{175C25B5-A9AA-468D-BEE8-9402DA114FCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{175C25B5-A9AA-468D-BEE8-9402DA114FCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{175C25B5-A9AA-468D-BEE8-9402DA114FCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B81E4A9-62E8-4FA9-B7D0-1096683DB349}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B81E4A9-62E8-4FA9-B7D0-1096683DB349}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B81E4A9-62E8-4FA9-B7D0-1096683DB349}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B81E4A9-62E8-4FA9-B7D0-1096683DB349}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {471C34A6-31D0-4210-9677-699CBD18B3CD}
+	EndGlobalSection
+EndGlobal

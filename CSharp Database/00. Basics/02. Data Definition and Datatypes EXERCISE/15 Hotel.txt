@@ -1,0 +1,131 @@
+CREATE DATABASE Hotel
+
+CREATE TABLE Employees(
+	Id INT IDENTITY NOT NULL,
+	FirstName NVARCHAR(50) NOT NULL,
+	LastName NVARCHAR(50) NOT NULL,
+	Title NVARCHAR(50),
+	Notes NVARCHAR(MAX),
+	CONSTRAINT PK__Id_Employees PRIMARY KEY (Id)
+)
+
+INSERT INTO Employees(FirstName, LastName)
+	 VALUES ('Harry', 'Smith'),
+			('Emma', 'Owens'),
+			('Lisa', 'Swan')
+
+CREATE TABLE Customers(
+	AccountNumber INT IDENTITY NOT NULL,
+	FirstName NVARCHAR(50) NOT NULL,
+	LastName NVARCHAR(50) NOT NULL,
+	PhoneNumber VARCHAR(20) NOT NULL,
+	EmergencyName NVARCHAR(50) NOT NULL,
+	EmergencyNumber VARCHAR(20) NOT NULL,
+	Notes NVARCHAR(MAX),
+	CONSTRAINT PK_Id_Customers PRIMARY KEY (AccountNumber)
+)
+
+INSERT INTO Customers(FirstName, LastName, PhoneNumber, EmergencyName, EmergencyNumber)
+	 VALUES ('Lisa', 'Smith', '+00140923403', 'Wanda Smalls', '+00141233403'),
+			('Bruce', 'Wayne', '+00140989410', 'John Wayne', '+00147233418'),
+			('Lisa', 'Peterson', '+00140523607', 'Amy Smiles', '+00141275412')
+
+CREATE TABLE RoomStatus(
+	RoomStatus NVARCHAR(20) NOT NULL,
+	Notes NVARCHAR(MAX)
+	CONSTRAINT PK_Id_RoomStatus PRIMARY KEY (RoomStatus)
+)
+
+INSERT INTO RoomStatus(RoomStatus)
+	 VALUES ('Available'),
+			('Occupied'),
+			('Unavailable')
+
+CREATE TABLE RoomTypes(
+	RoomType NVARCHAR(15) NOT NULL,
+	Notes NVARCHAR(MAX)
+	CONSTRAINT PK_Id_RoomType PRIMARY KEY (RoomType)
+)
+
+INSERT INTO RoomTypes(RoomType)
+	 VALUES ('Single'),
+			('Double'),
+			('Apartment')
+
+CREATE TABLE BedTypes(
+	BedType NVARCHAR(20),
+	Notes NVARCHAR(MAX),
+	CONSTRAINT PK__Id_BedType PRIMARY KEY(BedType)
+)
+
+INSERT INTO BedTypes(BedType)
+	 VALUES ('Single Bed'),
+			('Double Beds'),
+			('KingSize Bed')
+
+CREATE TABLE Rooms(
+	RoomNumber INT NOT NULL,
+	RoomType NVARCHAR(15) FOREIGN KEY REFERENCES RoomTypes(RoomType) NOT NULL,
+	BedType NVARCHAR(20) FOREIGN KEY REFERENCES BedTypes(BedType) NOT NULL,
+	Rate DECIMAL NOT NULL,
+	RoomStatus NVARCHAR(20) FOREIGN KEY REFERENCES RoomStatus(RoomStatus),
+	Notes NVARCHAR(MAX)
+	CONSTRAINT PK_Id_RoomNumber PRIMARY KEY(RoomNumber)
+)
+
+INSERT INTO Rooms(RoomNumber, RoomType, BedType, Rate, RoomStatus)
+	 VALUES ('113', 'Single', 'Single Bed', 78.80, 'Available'),
+			('234', 'Double', 'Double Beds', 113.20, 'Unavailable'),
+			('333', 'Apartment', 'KingSize Bed', 200.00, 'Occupied')
+
+CREATE TABLE Payments(
+	Id INT IDENTITY NOT NULL,
+	EmployeeId INT FOREIGN KEY REFERENCES Employees(Id) NOT NULL,
+	PaymentDate DATE NOT NULL,
+	AccountNumber VARCHAR(80) NOT NULL,
+	FirstDateOccupied DATE NOT NULL,
+	LastDateOccupied DATE NOT NULL,
+	TotalDays SMALLINT,
+	AmountCharged DECIMAL NOT NULL,
+	TaxRate DECIMAL NOT NULL,
+	TaxAmount DECIMAL NOT NULL,
+	PaymentTotal DECIMAL NOT NULL,
+	Notes NVARCHAR(MAX),
+	CONSTRAINT PK_Id_Payments PRIMARY KEY(Id)
+)
+
+INSERT INTO Payments(EmployeeId,
+					 PaymentDate,
+					 AccountNumber,
+					 FirstDateOccupied,
+					 LastDateOccupied, 
+					 TotalDays,
+					 AmountCharged,
+					 TaxRate,
+					 TaxAmount,
+					 PaymentTotal)
+	 VALUES ('1', '20180505', 'UK32423TTT324234', '20180707', '20180710', 3, 180, 10, 16.50, 195.50),
+			('2', '20180606', 'BG32123DDD324837', '20180808', '20180812', 4, 200, 10, 18.40, 260.90),
+			('3', '20180707', 'DE21423EEE344536', '20180909', '20180914', 5, 240, 10, 20.90, 300.00)
+
+CREATE TABLE Occupancies(
+	 Id INT IDENTITY NOT NULL,
+	 EmployeeId INT FOREIGN KEY REFERENCES Employees(Id) NOT NULL,
+	 DateOccupied DATE NOT NULL,
+	 AccountNumber VARCHAR(80) NOT NULL,
+	 RoomNumber INT NOT NULL,
+	 RateApplied DECIMAL NOT NULL,
+	 PhoneCharge DECIMAL,
+	 Notes NVARCHAR(MAX),
+	 CONSTRAINT PK_Id_Occupants PRIMARY KEY(Id)
+)		
+
+INSERT INTO Occupancies(EmployeeId,
+						DateOccupied,
+						AccountNumber,
+						RoomNumber,
+						RateApplied,
+						PhoneCharge)
+	 VALUES ('1', '20180707', 'UK32423TTT324234', 113, 18.50, NULL),
+			('2', '20180808', 'BG32123DDD324837', 234, 25.60, 118.34),
+			('3', '20180909', 'DE21423EEE344536', 333, 30.90, 67.60)

@@ -1,0 +1,45 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                var employees = context.Employees
+                    .Where(x => x.EmployeeId == 147)
+                    .Select(x => new
+                    {
+                        Name = $"{x.FirstName} {x.LastName}",
+                        JobTitle = $"{x.JobTitle}",
+                        Projects = x.EmployeesProjects
+                        .OrderBy(ep => ep.Project.Name)
+                        .Select(ep => new
+                        {
+                            ProjectName = ep.Project.Name
+                        })
+                    });
+
+                using (StreamWriter sw = new StreamWriter("../Task09.txt"))
+                {
+                    foreach (var e in employees)
+                    {
+                        sw.WriteLine($"{e.Name} - {e.JobTitle}");
+                        foreach (var p in e.Projects)
+                        {
+                            sw.WriteLine($"{p.ProjectName}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

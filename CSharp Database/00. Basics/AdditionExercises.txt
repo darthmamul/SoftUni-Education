@@ -1,0 +1,343 @@
+--1--
+SELECT SUBSTRING(Email, CHARINDEX('@', Email)+1, LEN(Email)-CHARINDEX('@', Email)) AS [Email Provider],
+       COUNT(Email) AS [Number Of Users]
+FROM Users
+GROUP BY SUBSTRING(Email, (CHARINDEX('@', Email)+1), (LEN(Email)-CHARINDEX('@', Email)))
+ORDER BY [Number Of Users] DESC,
+         [Email Provider];
+
+--2--
+SELECT g.Name AS [Game],
+       gt.Name AS [Game Type],
+       u.Username,
+       ug.Level,
+       ug.Cash,
+       c.Name AS [Character]
+FROM Games AS g
+     JOIN GameTypes AS gt ON gt.Id = g.GameTypeId
+     JOIN UsersGames AS ug ON ug.GameId = g.Id
+     JOIN Users AS u ON u.Id = ug.UserId
+     JOIN Characters AS c ON c.Id = ug.CharacterId
+ORDER BY ug.Level DESC,
+         u.Username,
+         g.Name;
+
+--3--
+SELECT u.Username,
+       g.Name AS [Game],
+       COUNT(ugi.ItemId) AS [Items Count],
+       SUM(i.Price) AS [Items Price]
+FROM Users AS u
+     JOIN UsersGames AS ug ON ug.UserId = u.Id
+     JOIN Games AS g ON g.Id = ug.GameId
+     JOIN UserGameItems AS ugi ON ugi.UserGameId = ug.Id
+     JOIN Items AS i ON i.Id = ugi.ItemId
+GROUP BY u.Username,
+         g.Name
+HAVING COUNT(ugi.ItemId) >= 10
+ORDER BY [Items Count] DESC,
+         [Items Price] DESC,
+         u.Username;
+
+--4--
+SELECT u.Username,
+       g.Name,
+       MAX(c.Name) AS [Character],
+       SUM(ItemStatistics.Strength) + MAX(GameTypeStatistics.Strength) + MAX(CharactersStatistics.Strength) AS [Strength],
+       SUM(ItemStatistics.Defence) + MAX(GameTypeStatistics.Defence) + MAX(CharactersStatistics.Defence) AS [Defence],
+       SUM(ItemStatistics.Speed) + MAX(GameTypeStatistics.Speed) + MAX(CharactersStatistics.Speed) AS [Speed],
+       SUM(ItemStatistics.Mind) + MAX(GameTypeStatistics.Mind) + MAX(CharactersStatistics.Mind) AS [Mind],
+       SUM(ItemStatistics.Luck) + MAX(GameTypeStatistics.Luck) + MAX(CharactersStatistics.Luck) AS [Luck]
+FROM Users AS u
+     JOIN UsersGames AS ug ON ug.UserId = u.Id
+     JOIN Games AS g ON g.Id = ug.GameId
+     JOIN Characters AS c ON c.Id = ug.CharacterId
+     JOIN GameTypes AS gt ON gt.Id = g.GameTypeId
+     JOIN UserGameItems AS ugi ON ugi.UserGameId = ug.Id
+     JOIN Items AS i ON i.Id = ugi.ItemId
+     JOIN [Statistics] AS ItemStatistics ON ItemStatistics.Id = i.StatisticId
+     JOIN [Statistics] AS GameTypeStatistics ON GameTypeStatistics.Id = gt.BonusStatsId
+     JOIN [Statistics] AS CharactersStatistics ON CharactersStatistics.Id = c.StatisticId
+GROUP BY u.Username,
+         g.Name
+ORDER BY Strength DESC,
+         Defence DESC,
+         Speed DESC,
+         Mind DESC,
+         Luck DESC;
+
+--5--
+WITH CTE_AverageStats(AverageMind,
+                      AverageLuck,
+                      AverageSpeed)
+     AS (
+     SELECT AVG(Mind),
+            AVG(Luck),
+            AVG(Speed)
+     FROM [Statistics])
+     SELECT i.Name,
+            i.Price,
+            i.MinLevel,
+            s.Strength,
+            s.Defence,
+            s.Speed,
+            s.Luck,
+            s.Mind
+     FROM Items AS i
+          JOIN [Statistics] AS s ON s.Id = i.StatisticId
+     WHERE s.Mind >
+(
+    SELECT AverageMind
+    FROM CTE_AverageStats
+)
+           AND s.Luck >
+(
+    SELECT AverageLuck
+    FROM CTE_AverageStats
+)
+           AND s.Speed >
+(
+    SELECT AverageSpeed
+    FROM CTE_AverageStats
+);
+
+--6--
+SELECT i.Name AS [Item],
+       i.Price,
+       i.MinLevel,
+       gt.Name AS [Forbidden Game Type]
+FROM Items AS i
+     LEFT JOIN GameTypeForbiddenItems AS gtfi ON gtfi.ItemId = i.Id
+     LEFT JOIN GameTypes AS gt ON gt.Id = gtfi.GameTypeId
+ORDER BY [Forbidden Game Type] DESC,
+         Item;
+
+--7--
+DECLARE @AlexCash MONEY;
+DECLARE @AlexEdinburghID INT;
+DECLARE @ItemsTotalPrice MONEY;
+SET @AlexEdinburghID =
+(
+    SELECT Id
+    FROM UsersGames
+    WHERE UserId =
+(
+    SELECT Id
+    FROM Users
+    WHERE Username = 'Alex'
+)
+          AND GameId =
+(
+    SELECT Id
+    FROM Games
+    WHERE Name = 'Edinburgh'
+)
+);
+SET @ItemsTotalPrice =
+(
+    SELECT SUM(Price)
+    FROM Items
+    WHERE Name IN('Blackguard', 'Bottomless Potion of Amplification', 'Eye of Etlich (Diablo III)', 'Gem of Efficacious Toxin', 'Golden Gorget of Leoric', 'Hellfire Amulet')
+);
+UPDATE UsersGames
+  SET
+      Cash-=@ItemsTotalPrice
+WHERE Id = @AlexEdinburghID;
+INSERT INTO UserGameItems
+VALUES
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Blackguard'
+),
+@AlexEdinburghID
+),
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Bottomless Potion of Amplification'
+),
+@AlexEdinburghID
+),
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Eye of Etlich (Diablo III)'
+),
+@AlexEdinburghID
+),
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Gem of Efficacious Toxin'
+),
+@AlexEdinburghID
+),
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Golden Gorget of Leoric'
+),
+@AlexEdinburghID
+),
+(
+(
+    SELECT Id
+    FROM Items
+    WHERE Name = 'Hellfire Amulet'
+),
+@AlexEdinburghID
+);
+SELECT u.Username,
+       g.Name,
+       ug.Cash,
+       i.Name AS [Item Name]
+FROM Users AS u
+     JOIN UsersGames AS ug ON ug.UserId = u.Id
+     JOIN Games AS g ON g.Id = ug.GameId
+     JOIN UserGameItems AS ugi ON ugi.UserGameId = ug.Id
+     JOIN Items AS i ON i.Id = ugi.ItemId
+WHERE g.Name = 'Edinburgh'
+ORDER BY [Item Name];
+
+--8--
+SELECT p.PeakName,
+       m.MountainRange AS [Mountain],
+       p.Elevation
+FROM Peaks AS p
+     JOIN Mountains AS m ON m.Id = p.MountainId
+ORDER BY p.Elevation DESC,
+         p.PeakName;
+
+--9--
+SELECT p.PeakName,
+       m.MountainRange AS [Mountain],
+       c.CountryName,
+       cont.ContinentName
+FROM Countries AS c
+     JOIN Continents AS cont ON cont.ContinentCode = c.ContinentCode
+     RIGHT JOIN MountainsCountries AS mc ON mc.CountryCode = c.CountryCode
+     JOIN Mountains AS m ON m.Id = mc.MountainId
+     JOIN Peaks AS p ON p.MountainId = m.Id
+ORDER BY p.PeakName,
+         c.CountryName;
+
+--10--
+SELECT c.CountryName,
+       co.ContinentName,
+       COUNT(r.Id) AS [RiversCount],
+       isnull(SUM(r.Length), 0) AS [TotalLength]
+FROM Countries AS c
+     LEFT JOIN Continents AS co ON co.ContinentCode = c.ContinentCode
+     LEFT JOIN CountriesRivers AS cr ON cr.CountryCode = c.CountryCode
+     LEFT JOIN rivers AS r ON r.Id = cr.RiverId
+GROUP BY CountryName,
+         ContinentName
+ORDER BY RiversCount DESC,
+         TotalLength DESC,
+         c.CountryName;
+
+--11--
+SELECT cu.CurrencyCode,
+       cu.Description AS [Currency],
+       COUNT(c.CountryCode) AS [NumberOfCountries]
+FROM Countries AS c
+     RIGHT JOIN Currencies AS cu ON cu.CurrencyCode = c.CurrencyCode
+GROUP BY cu.CurrencyCode,
+         cu.Description
+ORDER BY NumberOfCountries DESC,
+         cu.Description;
+
+--12--
+SELECT cont.ContinentName,
+       SUM(CAST(c.AreaInSqKm AS BIGINT)) AS [CountriesArea],
+       SUM(CAST(c.Population AS BIGINT)) AS [CountriesPopulation]
+FROM Continents AS cont
+     JOIN Countries AS c ON c.ContinentCode = cont.ContinentCode
+GROUP BY cont.ContinentName
+ORDER BY [CountriesPopulation] DESC;
+
+--13--
+CREATE TABLE Monasteries
+(Id          INT
+ PRIMARY KEY IDENTITY NOT NULL,
+ Name        VARCHAR(MAX) NOT NULL,
+ CountryCode CHAR(2) FOREIGN KEY REFERENCES Countries(CountryCode)
+);
+
+INSERT INTO Monasteries(Name, CountryCode) VALUES
+('Rila Monastery “St. Ivan of Rila”', 'BG'), 
+('Bachkovo Monastery “Virgin Mary”', 'BG'),
+('Troyan Monastery “Holy Mother''s Assumption”', 'BG'),
+('Kopan Monastery', 'NP'),
+('Thrangu Tashi Yangtse Monastery', 'NP'),
+('Shechen Tennyi Dargyeling Monastery', 'NP'),
+('Benchen Monastery', 'NP'),
+('Southern Shaolin Monastery', 'CN'),
+('Dabei Monastery', 'CN'),
+('Wa Sau Toi', 'CN'),
+('Lhunshigyia Monastery', 'CN'),
+('Rakya Monastery', 'CN'),
+('Monasteries of Meteora', 'GR'),
+('The Holy Monastery of Stavronikita', 'GR'),
+('Taung Kalat Monastery', 'MM'),
+('Pa-Auk Forest Monastery', 'MM'),
+('Taktsang Palphug Monastery', 'BT'),
+('Sümela Monastery', 'TR')
+
+--ALTER TABLE Countries
+--ADD IsDeleted BIT NOT NULL DEFAULT 0
+
+UPDATE Countries
+  SET
+      IsDeleted = 1
+WHERE CountryCode IN(SELECT CountryCode
+                     FROM CountriesRivers
+                     GROUP BY CountryCode
+                     HAVING COUNT(RiverId) > 3);
+SELECT m.Name AS [Monastery],
+       c.CountryName AS [Country]
+FROM Monasteries AS m
+     JOIN Countries AS c ON c.CountryCode = m.CountryCode
+WHERE c.IsDeleted = 0
+ORDER BY Monastery;
+
+--14--
+UPDATE Countries
+  SET
+      CountryName = 'Burma'
+WHERE CountryName = 'Myanmar';
+
+INSERT INTO Monasteries
+VALUES
+('Hanga Abey',
+(
+    SELECT CountryCode
+    FROM Countries
+    WHERE CountryName = 'Tanzania'
+)
+),
+('Myin-Tin-Daik',
+(
+    SELECT CountryCode
+    FROM Countries
+    WHERE CountryName = 'Myanmar'
+)
+);
+
+SELECT cont.ContinentName,
+       c.CountryName,
+       COUNT(m.Id) AS [MonstariesCount]
+FROM Continents AS cont
+     LEFT JOIN Countries AS c ON c.ContinentCode = cont.ContinentCode
+                                 AND c.IsDeleted = 0
+     LEFT JOIN Monasteries AS m ON m.CountryCode = c.CountryCode
+GROUP BY cont.ContinentName,
+         c.CountryName
+ORDER BY MonstariesCount DESC,
+         c.CountryName;

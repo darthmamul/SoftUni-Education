@@ -1,0 +1,31 @@
+using System;
+using System.IO;
+using System.Linq;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                var employees = context.Employees
+                    .Where(x => x.Salary > 50000)
+                    .Select(x => x.FirstName)
+                    .OrderBy(x => x)
+                    .ToArray();
+
+                using (StreamWriter sw = new StreamWriter("../EmployeesWithSalaryOver50000.txt"))
+                {
+                    foreach (var e in employees)
+                    {
+                        sw.WriteLine(e);
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,39 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                var selectedEmployees = context.Employees
+                    .Where(x => x.Department.Name == "Research and Development")
+                    .OrderBy(x => x.Salary)
+                    .ThenByDescending(x => x.FirstName)
+                    .Select(x => new
+                    {
+                        FirstName = x.FirstName,
+                        LastName = x.LastName,
+                        DepartmentName = x.Department.Name,
+                        Salary = x.Salary
+                    })
+                    .ToArray();
+
+                using (StreamWriter sw = new StreamWriter("../Task05.txt"))
+                {
+                    foreach (var s in selectedEmployees)
+                    {
+                        sw.WriteLine($"{s.FirstName} {s.LastName} from {s.DepartmentName} - ${s.Salary:F2}");
+                    }
+                }
+            }
+        }
+    }
+}

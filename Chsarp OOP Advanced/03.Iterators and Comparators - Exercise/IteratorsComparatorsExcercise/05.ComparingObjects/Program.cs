@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace _05.ComparingObjects
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            List<Person> people = new List<Person>();
+
+            string input;
+            while ((input = Console.ReadLine()) != "END")
+            {
+                string[] tokens = input.Split();
+
+                string name = tokens[0];
+                int age = int.Parse(tokens[1]);
+                string town = tokens[2];
+
+                Person person = new Person(name, age, town);
+                people.Add(person);
+            }
+
+            //-1 т.к. колекцията ни започва от 0, и ще върнем с 1 offset:
+            int personIndex = int.Parse(Console.ReadLine()) - 1;
+
+            Person personToCompare = people[personIndex];
+
+            int matches = 0;
+
+            foreach (Person p in people)
+            {
+                if (p.CompareTo(personToCompare) == 0)
+                {
+                    matches++;
+                }
+            }
+
+            if (matches > 1)
+            {
+                Console.WriteLine($"{matches} {people.Count - matches} {people.Count}");
+            }
+            else
+            {
+                Console.WriteLine("No matches");
+            }
+        }
+    }
+}

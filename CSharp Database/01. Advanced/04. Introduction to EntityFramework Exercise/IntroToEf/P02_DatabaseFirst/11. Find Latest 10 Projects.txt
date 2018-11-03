@@ -1,0 +1,41 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                var projects = context.Projects
+                    .OrderByDescending(x => x.StartDate)
+                    .Take(10)
+                    .OrderBy(x => x.Name)
+                    .Select(x => new
+                    {
+                        x.Name,
+                        x.Description,
+                        x.StartDate
+                    })
+                    .ToArray();
+
+                using (StreamWriter sw = new StreamWriter("../Task11.txt"))
+                {
+                    foreach (var p in projects)
+                    {
+                        sw.WriteLine(p.Name);
+                        sw.WriteLine(p.Description);
+                        sw.WriteLine(p.StartDate.ToString("M/d/yyyy h:mm:ss tt", CultureInfo.InvariantCulture));
+                    }
+                }
+            }
+        }
+    }
+}

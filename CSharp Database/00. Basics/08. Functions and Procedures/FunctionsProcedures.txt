@@ -1,0 +1,249 @@
+--1--
+CREATE PROCEDURE usp_GetEmployeesSalaryAbove35000
+AS
+     BEGIN
+         SELECT FirstName,
+                LastName
+         FROM Employees
+         WHERE Salary > 35000;
+     END;
+GO
+--2--
+CREATE PROCEDURE usp_GetEmployeesSalaryAboveNumber(@receivedNumber DECIMAL(18, 4))
+AS
+     BEGIN
+         SELECT FirstName,
+                LastName
+         FROM Employees
+         WHERE Salary >= @receivedNumber;
+     END;
+GO
+--3--
+CREATE PROCEDURE usp_GetTownsStartingWith(@inputText VARCHAR(50))
+AS
+     BEGIN
+         SELECT [Name]
+         FROM Towns
+         WHERE [Name] LIKE @inputText+'%';
+     END;
+
+EXEC usp_GetTownsStartingWith
+     'c';
+GO
+
+--4--
+CREATE PROCEDURE usp_GetEmployeesFromTown(@townName VARCHAR(50))
+AS
+     BEGIN
+         SELECT FirstName,
+                LastName
+         FROM Employees AS e
+              JOIN Addresses AS a ON a.AddressID = e.AddressID
+              JOIN Towns AS t ON t.TownID = a.TownID
+         WHERE t.Name LIKE @townName+'%';
+     END;
+
+EXEC usp_GetEmployeesFromTown
+     'sofi';
+GO
+
+--5--
+CREATE FUNCTION ufn_GetSalaryLevel
+(@salary DECIMAL(18, 4)
+)
+RETURNS CHAR(7)
+     BEGIN
+         IF(@salary < 30000)
+             BEGIN
+                 RETURN 'Low';
+             END;
+             ELSE
+         IF(@salary BETWEEN 30000 AND 50000)
+             BEGIN
+                 RETURN 'Average';
+             END;
+         RETURN 'High';
+     END;
+
+SELECT Salary, dbo.ufn_GetSalaryLevel(Salary) AS SalaryLevel
+  FROM Employees
+
+GO
+
+--6--
+CREATE PROC usp_EmployeesBySalaryLevel @salaryLevel CHAR(7)
+AS
+     BEGIN
+         SELECT FirstName,
+                LastName
+         FROM Employees
+         WHERE dbo.ufn_GetSalaryLevel(Salary) = @salaryLevel;
+     END;
+EXEC usp_EmployeesBySalaryLevel
+     'High';
+
+GO
+
+--7--
+CREATE FUNCTION ufn_IsWordComprised
+(@setOfLetters VARCHAR(MAX),
+ @word         VARCHAR(MAX)
+)
+RETURNS BIT
+     BEGIN
+         DECLARE @index INT= 1;
+         DECLARE @currentChar CHAR(1);
+         DECLARE @isComprised INT;
+         WHILE(@index <= LEN(@word))
+             BEGIN
+                 SET @currentChar = SUBSTRING(@word, @index, 1);
+                 SET @isComprised = CHARINDEX(@currentChar, @setOfLetters);
+                 IF(@isComprised = 0)
+                     BEGIN
+                         RETURN 0;
+                     END;
+                 SET @index+=1;
+             END;
+         RETURN 1;
+     END;
+SELECT dbo.ufn_IsWordComprised('oistmiahf', 'Sofia');
+GO
+
+--8--
+CREATE PROCEDURE usp_DeleteEmployeesFromDepartment(@departmendId INT)
+AS
+     BEGIN
+         DELETE FROM EmployeesProjects
+         WHERE EmployeeID IN(SELECT EmployeeID
+                             FROM Employees
+                             WHERE DepartmentID = @departmendId);
+         ALTER TABLE Departments ALTER COLUMN ManagerID INT;
+         UPDATE Employees
+           SET
+               ManagerID = NULL
+         WHERE ManagerID IN(SELECT EmployeeID
+                            FROM Employees
+                            WHERE DepartmentID = @departmendId);
+         UPDATE Departments
+           SET
+               ManagerID = NULL
+         WHERE ManagerID IN(SELECT EmployeeID
+                            FROM Employees
+                            WHERE DepartmentID = @departmendId);
+         DELETE FROM Employees
+         WHERE DepartmentID = @departmendId;
+         DELETE FROM Departments
+         WHERE DepartmentID = @departmendId;
+         SELECT *
+         FROM Employees
+         WHERE DepartmentID = @departmendId;
+         SELECT COUNT(*)
+         FROM Employees
+         WHERE DepartmentID = @departmendId;
+     END;
+
+GO
+
+--9--
+--USE Bank
+
+CREATE PROCEDURE usp_GetHoldersFullName
+AS
+     BEGIN
+         SELECT concat(FirstName, ' ', LastName) AS [Full Name]
+         FROM AccountHolders;
+     END;
+
+--EXEC usp_GetHoldersFullName;
+GO
+
+--10--
+--First Solution but wrong--
+CREATE PROCEDURE usp_GetHoldersWithBalanceHigherThan(@inputNumber DECIMAL(18, 4))
+AS
+     BEGIN
+         SELECT ah.FirstName,
+                ah.LastName
+         FROM AccountHolders AS ah
+              JOIN Accounts AS a ON a.AccountHolderId = ah.Id
+         GROUP BY ah.FirstName,
+                  ah.LastName
+         HAVING SUM(a.Balance) > @inputNumber;
+     END;
+
+--Second Solution proper--
+CREATE PROCEDURE usp_GetHoldersWithBalanceHigherThan(@inputNumber DECIMAL(18, 4))
+AS
+     BEGIN
+         WITH CTE_AccountHolderBalance(AcountHolderId,
+                                       Balance)
+              AS (
+              SELECT AccountHolderId,
+                     SUM(Balance) AS TotalBalance
+              FROM Accounts
+              GROUP BY AccountHolderId)
+              SELECT FirstName,
+                     LastName
+              FROM AccountHolders AS ah
+                   JOIN CTE_AccountHolderBalance AS cab ON cab.AcountHolderId = ah.Id
+              WHERE cab.Balance > @inputNumber
+			  ORDER BY ah.LastName, ah.FirstName
+     END;
+
+--EXEC usp_GetHoldersWithBalanceHigherThan 7000;
+GO
+
+--11--
+CREATE FUNCTION ufn_CalculateFutureValue
+(@sum          DECIMAL(15, 2),
+ @interestRate FLOAT,
+ @years        INT
+)
+RETURNS DECIMAL(15, 4)
+     BEGIN
+         RETURN @sum * POWER((1 + @interestRate), @years);
+     END
+
+--SELECT dbo.ufn_CalculateFutureValue(1000, 0.1, 5);
+GO
+--12--
+CREATE PROCEDURE usp_CalculateFutureValueForAccount @accountID    INT,
+                                                    @interestRate FLOAT
+AS
+     BEGIN
+         SELECT a.Id,
+                ah.FirstName,
+                ah.LastName,
+                a.Balance,
+                dbo.ufn_CalculateFutureValue(Balance, @interestRate, 5) AS [Balance in 5 years]
+         FROM Accounts AS a
+              JOIN AccountHolders AS ah ON ah.Id = a.AccountHolderId
+         WHERE a.Id = @accountID
+     END
+
+--EXEC usp_CalculateFutureValueForAccount 1, 0.1
+GO
+
+--13--
+CREATE FUNCTION ufn_CashInUsersGames
+(@gameName VARCHAR(50)
+)
+RETURNS TABLE
+AS
+     RETURN
+(
+    SELECT SUM(e.Cash) AS [SumCash]
+    FROM
+(
+    SELECT g.Id,
+           ug.Cash,
+           ROW_NUMBER() OVER(ORDER BY ug.Cash DESC) AS [RowNumber]
+    FROM Games AS g
+         JOIN UsersGames AS ug ON ug.GameId = g.Id
+    WHERE g.Name = @gameName
+) AS e
+    WHERE e.RowNumber % 2 = 1
+);
+
+--SELECT * FROM dbo.ufn_CashInUsersGames('Lily Stargazer');
+GO

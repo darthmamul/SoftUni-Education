@@ -1,0 +1,39 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using P02_DatabaseFirst.Data;
+using P02_DatabaseFirst.Data.Models;
+
+namespace P02_DatabaseFirst
+{
+    public class StartUp
+    {
+        public static void Main(string[] args)
+        {
+            using (SoftUniContext context = new SoftUniContext())
+            {
+                var adresses = context.Addresses
+                    .OrderByDescending(x => x.Employees.Count())
+                    .ThenBy(x => x.Town.Name)
+                    .ThenBy(x => x.AddressText)
+                    .Select(x => new
+                    {
+                        AddressText = x.AddressText,
+                        TownName = x.Town.Name,
+                        Count = x.Employees.Count()
+                    })
+                    .Take(10)
+                    .ToArray();
+
+                using (StreamWriter sw = new StreamWriter("../Task08.txt"))
+                {
+                    foreach (var a in adresses)
+                    {
+                        sw.WriteLine($"{a.AddressText}, {a.TownName} - {a.Count} employees");
+                    }
+                }
+            }
+        }
+    }
+}
